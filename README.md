@@ -78,13 +78,16 @@ heart-disease-prediction/
 
 ## Decision Tree Visualization
 
-The diagram below shows the trained Decision Tree (depth=4) on the Heart Disease dataset.
-Each internal node shows the **split feature**, **threshold**, **sample count**, and **entropy**.
-Leaf nodes are colour-coded: 🔵 **No Disease** / 🔴 **Heart Disease**.
+The diagram below shows the full trained Decision Tree (depth=10) on the Heart Disease dataset.
+Each internal node displays the **split feature**, **threshold**, **entropy**, **sample count**, and **class distribution**.
+Leaf nodes are colour-coded — 🔵 **No Disease** (light blue) / 🔴 **Heart Disease** (light coral).
+
+The root split on `cp` (chest pain type) reveals it as the strongest single predictor,
+followed by `ca` (major vessels), `oldpeak`, `exang`, and `age` at deeper levels.
 
 ![Decision Tree Visualization](assets/decision_tree.png)
 
-> Generated with: `python visualize.py --depth 4 --out assets/decision_tree.png`
+> To regenerate: `python visualize.py --depth 10 --out assets/decision_tree.png`
 
 ---
 
