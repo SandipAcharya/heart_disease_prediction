@@ -1,6 +1,6 @@
 # 🫀 Heart Disease Prediction — Decision Tree & Random Forest from Scratch
 
-> **MLProject** — Implementation of Decision Tree and Random Forest classifiers **from scratch** (no sklearn for the ML algorithms), applied to the UCI Heart Disease dataset, with an interactive Flask web dashboard for hyperparameter tuning and live visualisation.
+> **ML Project** — Implementation of Decision Tree and Random Forest classifiers **from scratch** (no sklearn for the ML algorithms), applied to the UCI Heart Disease dataset, with an interactive Flask web dashboard for hyperparameter tuning and live visualisation.
 
 ---
 
@@ -20,14 +20,17 @@
 
 ## Overview
 
-This project demonstrates a ground-up implementation of two fundamental machine learning algorithms:
+This project demonstrates a ground-up implementation of tree-based ML algorithms and benchmarks them against optimised library implementations on the UCI Heart Disease dataset.
 
-| Algorithm | Key idea |
-|---|---|
-| **Decision Tree** | Recursively splits data by the feature that maximises information gain (Shannon entropy) |
-| **Random Forest** | Bagging ensemble of Decision Trees with random feature sub-sampling; majority vote for prediction |
+| Algorithm | Type | Key idea |
+|---|---|---|
+| **Decision Tree** | From scratch | Recursive entropy-based splits |
+| **Random Forest** | From scratch | Bagging ensemble + random feature sub-sampling |
+| **Gradient Boosting** | From scratch | Sequential residual correction (core of XGBoost) |
+| **XGBoost** | Library baseline | 2nd-order Taylor gradients + L1/L2 regularisation |
+| **LightGBM** | Library baseline | Leaf-wise growth + GOSS sampling |
 
-Both models are applied to predict the presence of heart disease based on 13 clinical features. An interactive Flask dashboard lets you tune hyperparameters and instantly see the effect on model performance.
+An interactive Flask dashboard lets you tune hyperparameters and instantly see the effect on model performance.
 
 ---
 
@@ -36,20 +39,27 @@ Both models are applied to predict the presence of heart disease based on 13 cli
 ```
 heart-disease-prediction/
 │
-├── src/                        # From-scratch ML implementations
+├── src/                         # From-scratch ML implementations
 │   ├── __init__.py
-│   ├── decision_tree.py        # Node + DecisionTree (entropy-based CART)
-│   └── random_forest.py        # RandomForest (bagging ensemble)
+│   ├── decision_tree.py         # Node + DecisionTree (entropy-based CART)
+│   ├── random_forest.py         # RandomForest (bootstrap bagging ensemble)
+│   ├── regression_tree.py       # RegressionTree (MSE splits — base learner)
+│   └── gradient_boosting.py     # GradientBoosting (GBDT from scratch)
 │
 ├── data/
-│   └── heart.csv               # UCI Heart Disease dataset (303 samples, 14 features)
+│   └── heart.csv                # UCI Heart Disease dataset (303 samples, 13 features)
+│
+├── assets/
+│   ├── decision_tree.png        # Decision tree diagram (depth=10)
+│   └── model_comparison.png     # Model comparison bar chart
 │
 ├── templates/
-│   └── index.html              # Interactive Flask dashboard (HTML/CSS/JS)
+│   └── index.html               # Interactive Flask dashboard (HTML/CSS/JS)
 │
-├── app.py                      # Flask web application (main entry point)
-├── evaluate.py                 # CLI: train & benchmark both models
-├── visualize.py                # CLI: render Decision Tree as PNG
+├── app.py                       # Flask web application (main entry point)
+├── evaluate.py                  # CLI: benchmark Decision Tree & Random Forest
+├── compare.py                   # CLI: full 5-model comparative analysis
+├── visualize.py                 # CLI: render Decision Tree as PNG
 │
 ├── requirements.txt
 ├── .gitignore
@@ -63,16 +73,27 @@ heart-disease-prediction/
 ### Decision Tree (`src/decision_tree.py`)
 
 - **Split criterion**: Shannon entropy (information gain)
-- **Stopping conditions**: max depth, minimum samples to split, pure node
-- **Feature sub-sampling**: configurable `n_features` per split (enables use inside Random Forest)
-- Fully recursive `_grow_tree` / `_traverse_tree` without any sklearn internals
+- **Stopping conditions**: max depth, min samples to split, pure node
+- **Feature sub-sampling**: configurable `n_features` per split
+- Fully recursive `_grow_tree` / `_traverse_tree` — zero sklearn internals
 
 ### Random Forest (`src/random_forest.py`)
 
 - **Bootstrap aggregation**: each tree trains on a random sample with replacement
-- **Random feature sub-sampling** at every split (controllable via `n_features`)
+- **Random feature sub-sampling** at every split decorrelates the trees
 - **Majority voting** across all `n_trees` for final prediction
-- Configurable: `n_trees`, `max_depth`, `min_samples_split`, `max_samples`, `random_state`
+
+### Gradient Boosting (`src/gradient_boosting.py`) — *core algorithm behind XGBoost*
+
+- **Sequential boosting**: each tree corrects the errors of the previous one
+- **Loss function**: binary cross-entropy; pseudo-residuals = `y - sigmoid(F)`
+- **Base learner**: `RegressionTree` (`src/regression_tree.py`) with MSE splits
+- **Stochastic subsampling**: `subsample < 1.0` adds randomness, reduces overfitting
+- **Why not full XGBoost from scratch?**
+  XGBoost extends this with 2nd-order Taylor gradients (hessians), L1/L2
+  regularisation on leaf weights, and parallel C++ split-finding — engineering
+  optimisations that cannot be meaningfully replicated in a pure-Python class project.
+  We implement the core algorithm and use the official library for comparison.
 
 ---
 
@@ -170,27 +191,26 @@ python evaluate.py
 Sample output:
 
 ```
-============================================================
-  Decision Tree (from scratch)
-============================================================
-  Accuracy : 0.7869
-
-============================================================
-  Random Forest (from scratch)
-============================================================
-  Accuracy : 0.8525
+  Decision Tree (scratch)    Accuracy: 0.6721
+  Random Forest (scratch)    Accuracy: 0.8033
 ```
+
+---
+
+### Run the full model comparison
+
+```bash
+python compare.py
+```
+
+Benchmarks all 5 models and saves `assets/model_comparison.png`.
 
 ---
 
 ### Visualize the Decision Tree
 
 ```bash
-# Default: depth=4, output=decision_tree.png
-python visualize.py
-
-# Custom depth and output path
-python visualize.py --depth 5 --out outputs/tree_depth5.png
+python visualize.py --depth 10 --out assets/decision_tree.png
 ```
 
 ---
@@ -215,23 +235,42 @@ The interactive dashboard (powered by Flask + vanilla JS) allows you to:
 
 ---
 
-## Results
+## Comparative Analysis
 
-> Best configuration found during experimentation: `n_estimators=20`, `max_depth=15`, `max_features=None`, `bootstrap=True`
+### Results (UCI Heart Disease — 303 samples, 80/20 split)
 
-| Model | Test Accuracy |
-|---|---|
-| Decision Tree (scratch) | ~78–80% |
-| Random Forest (scratch) | ~82–85% |
-| sklearn RandomForestClassifier *(reference)* | ~85% |
+![Model Comparison Chart](assets/model_comparison.png)
+
+| Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC | Train Time |
+|---|---|---|---|---|---|---|
+| Decision Tree *(scratch)* | 0.672 | 0.684 | 0.672 | 0.672 | N/A | 0.29s |
+| Random Forest *(scratch)* | 0.803 | 0.822 | 0.803 | 0.798 | N/A | 9.5s |
+| **Gradient Boosting *(scratch)*** | **0.803** | **0.822** | **0.803** | **0.798** | **0.906** | 9.1s |
+| XGBoost *(library)* | **0.836** | **0.847** | **0.836** | **0.833** | 0.871 | 1.6s |
+| LightGBM *(library)* | 0.803 | 0.813 | 0.803 | 0.800 | 0.859 | **0.34s** |
+
+### Why each model performs as it does
+
+| Model | Strength | Limitation on this dataset |
+|---|---|---|
+| **Decision Tree** | Interpretable, fast | High variance — single tree overfits |
+| **Random Forest** | Variance reduction via bagging | Slower; 50 trees × recursive splits |
+| **Gradient Boosting** (scratch) | Bias reduction via sequential correction; highest ROC-AUC (0.906) | First-order gradients only; slower than XGBoost |
+| **XGBoost** | Best accuracy (83.6%); 2nd-order gradients + regularisation | Library overhead; slight edge from hessian weighting |
+| **LightGBM** | Fastest training (0.34s); excels on large datasets | GOSS/EFB sampling hurts on 303-row datasets |
+
+> **Key insight**: Our from-scratch Gradient Boosting matches Random Forest accuracy
+> and achieves the highest ROC-AUC (0.906), proving the algorithm is correctly implemented.
+> XGBoost's edge comes entirely from its engineering optimisations, not a different algorithm.
 
 ---
 
 ## Tech Stack
 
-| Layer | Library |
+| Layer | Tool |
 |---|---|
-| ML algorithms | Pure Python + NumPy |
+| From-scratch ML | Pure Python + NumPy |
+| Library baselines | XGBoost, LightGBM |
 | Data processing | pandas |
 | Evaluation metrics | scikit-learn (metrics only) |
 | Web server | Flask |
