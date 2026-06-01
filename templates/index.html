@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Random Forest Interactive Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1e3c72 0%, #2a8498 100%);
+            color: white; 
+            min-height: 100vh;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .control-panel h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e8e8e8;
+        }
+        
+        .input-with-info {
+            position: relative;
+        }
+        
+        .input-info {
+            font-size: 12px;
+            color: #b0b0b0;
+            margin-top: 4px;
+            font-style: italic;
+        }
+        
+        input, select { 
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+        }
+        
+        .run-button { 
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .run-button:hover:not(:disabled) {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .run-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .metric-card h3 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+        }
+        
+        .metric-label {
+            color: #e8e8e8;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .plots-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .plot-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .plot-card h3 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .plot-card img {
+            max-width: 100%;
+            height: auto;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-selection {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+        }
+        
+        .feature-selection select {
+            flex: 1;
+        }
+        
+        .error-message {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .success-message {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .plots-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Random Forest Algorithm</h1>
+            <p>Tuning hyperparameters and visualizing model performance</p>
+        </div>
+        
+        <div class="dashboard">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2>Hyperparameters</h2>
+                
+                <div class="form-group">
+                    <label for="n_estimators">Number of Estimators:</label>
+                    <div class="input-with-info">
+                        <input type="number" id="n_estimators" value="50" min="1" max="200">
+                        <div class="input-info">Number of trees in the forest (1-200)</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_depth">Max Depth:</label>
+                    <div class="input-with-info">
+                        <input type="number" id="max_depth" value="15" min="1" max="50">
+                        <div class="input-info">Maximum depth of each tree (1-50)</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_features">Max Features:</label>
+                    <select id="max_features">
+                        <option value="auto">auto (√n_features)</option>
+                        <option value="sqrt">sqrt (√n_features)</option>
+                        <option value="log2">log2 (log₂ n_features)</option>
+                        <option value="None" selected>None (all features)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bootstrap">Bootstrap:</label>
+                    <select id="bootstrap">
+                        <option value="True" selected>True</option>
+                        <option value="False">False</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_samples">Max Samples:</label>
+                    <div class="input-with-info">
+                        <input type="number" id="max_samples" value="400" min="50" max="500">
+                        <div class="input-info">Number of samples for bagging (50-500)</div>
+                    </div>
+                </div>
+                
+                <button class="run-button" onclick="runAlgorithm()" id="runButton">
+                    <span class="loading-spinner" id="loadingSpinner"></span>
+                    <span id="buttonText">Run Algorithm</span>
+                </button>
+                
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
+            </div>
+            
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <h2>Performance Metrics</h2>
+                
+                <div id="resultsContainer" class="hidden">
+                    <div class="metrics-grid">
+                        <!-- Training Metrics -->
+                        <div class="metric-card">
+                            <h3>Training Metrics</h3>
+                            <div class="metric-item">
+                                <span class="metric-label">Accuracy:</span>
+                                <span class="metric-value" id="trainAccuracy">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Precision:</span>
+                                <span class="metric-value" id="trainPrecision">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Recall:</span>
+                                <span class="metric-value" id="trainRecall">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">F1-Score:</span>
+                                <span class="metric-value" id="trainF1">-</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Test Metrics -->
+                        <div class="metric-card">
+                            <h3>Test Metrics</h3>
+                            <div class="metric-item">
+                                <span class="metric-label">Accuracy:</span>
+                                <span class="metric-value" id="testAccuracy">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Precision:</span>
+                                <span class="metric-value" id="testPrecision">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Recall:</span>
+                                <span class="metric-value" id="testRecall">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">F1-Score:</span>
+                                <span class="metric-value" id="testF1">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Plots -->
+                    <div class="plots-container">
+                        <div class="plot-card">
+                            <h3>Decision Boundary</h3>
+                            <div class="feature-selection">
+                                <select id="feature1">
+                                    {% for col in column_names %}
+                                        <option value="{{ loop.index0 }}" {% if loop.index0 == 0 %}selected{% endif %}>
+                                            {{ col }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <select id="feature2">
+                                    {% for col in column_names %}
+                                        <option value="{{ loop.index0 }}" {% if loop.index0 == 1 %}selected{% endif %}>
+                                            {{ col }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button class="run-button" onclick="updateDecisionBoundary()">Plot</button>
+                            </div>
+                            <img id="decisionBoundaryPlot" src="" alt="Decision Boundary">
+                        </div>
+                        
+                        <div class="plot-card">
+                            <h3>Confusion Matrix</h3>
+                            <img id="confusionMatrixPlot" src="" alt="Confusion Matrix">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="initialMessage" class="metric-card" style="text-align: center;">
+                    <h3>Click "Run Algorithm" to see results</h3>
+                    <p style="margin-top: 10px; opacity: 0.8;">
+                        Adjust the hyperparameters and run the Random Forest algorithm to visualize the results and performance metrics.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            const button = document.getElementById('runButton');
+            const spinner = document.getElementById('loadingSpinner');
+            const buttonText = document.getElementById('buttonText');
+            
+            button.disabled = true;
+            spinner.style.display = 'inline-block';
+            buttonText.textContent = 'Training Model...';
+            
+            // Hide previous messages
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            const button = document.getElementById('runButton');
+            const spinner = document.getElementById('loadingSpinner');
+            const buttonText = document.getElementById('buttonText');
+            
+            button.disabled = false;
+            spinner.style.display = 'none';
+            buttonText.textContent = 'Run Algorithm';
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+        
+        function updateMetrics(trainMetrics, testMetrics) {
+            document.getElementById('trainAccuracy').textContent = trainMetrics.accuracy;
+            document.getElementById('trainPrecision').textContent = trainMetrics.precision;
+            document.getElementById('trainRecall').textContent = trainMetrics.recall;
+            document.getElementById('trainF1').textContent = trainMetrics.f1_score;
+            
+            document.getElementById('testAccuracy').textContent = testMetrics.accuracy;
+            document.getElementById('testPrecision').textContent = testMetrics.precision;
+            document.getElementById('testRecall').textContent = testMetrics.recall;
+            document.getElementById('testF1').textContent = testMetrics.f1_score;
+        }
+        
+        function updatePlots(plots) {
+            document.getElementById('decisionBoundaryPlot').src = 'data:image/png;base64,' + plots.decision_boundary;
+            document.getElementById('confusionMatrixPlot').src = 'data:image/png;base64,' + plots.confusion_matrix;
+        }
+        
+        function validateInputs() {
+            const nEstimators = parseInt(document.getElementById('n_estimators').value);
+            const maxDepth = parseInt(document.getElementById('max_depth').value);
+            const maxSamples = parseInt(document.getElementById('max_samples').value);
+            
+            if (isNaN(nEstimators) || nEstimators < 1 || nEstimators > 200) {
+                throw new Error('Number of estimators must be between 1 and 200');
+            }
+            if (isNaN(maxDepth) || maxDepth < 1 || maxDepth > 50) {
+                throw new Error('Max depth must be between 1 and 50');
+            }
+            if (isNaN(maxSamples) || maxSamples < 50 || maxSamples > 500) {
+                throw new Error('Max samples must be between 50 and 500');
+            }
+        }
+        
+        async function runAlgorithm() {
+            showLoading();
+            
+            try {
+                validateInputs();
+                
+                const formData = new FormData();
+                formData.append('n_estimators', document.getElementById('n_estimators').value);
+                formData.append('max_depth', document.getElementById('max_depth').value);
+                formData.append('max_features', document.getElementById('max_features').value);
+                formData.append('bootstrap', document.getElementById('bootstrap').value);
+                formData.append('max_samples', document.getElementById('max_samples').value);
+                
+                const response = await fetch('/run_rf', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('initialMessage').style.display = 'none';
+                    document.getElementById('resultsContainer').classList.remove('hidden');
+                    
+                    updateMetrics(data.train_metrics, data.test_metrics);
+                    updatePlots(data.plots);
+                    
+                    showSuccess('Model trained successfully! Check the results below.');
+                } else {
+                    showError('Error: ' + data.error);
+                }
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function updateDecisionBoundary() {
+            const feature1 = document.getElementById('feature1').value;
+            const feature2 = document.getElementById('feature2').value;
+            
+            if (feature1 === feature2) {
+                showError('Please select two different features for the decision boundary');
+                return;
+            }
+            
+            const button = document.querySelector('.feature-selection .run-button');
+            button.disabled = true;
+            button.textContent = 'Plotting...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('feature1', feature1);
+                formData.append('feature2', feature2);
+                
+                const response = await fetch('/plot_decision_boundary', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('decisionBoundaryPlot').src = 'data:image/png;base64,' + data.plot;
+                    showSuccess('Decision boundary updated successfully!');
+                } else {
+                    showError('Error: ' + data.error);
+                }
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Plot';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    const buttonText = document.getElementById('buttonText');
+                    if (!document.getElementById('runButton').disabled) {
+                        buttonText.textContent = 'Run Algorithm';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
