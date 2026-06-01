@@ -138,3 +138,4 @@ class RandomForest:
     def _most_common_label(y) -> int:
         """Return the majority class label from an array of predictions."""
         return Counter(y).most_common(1)[0][0]
+
