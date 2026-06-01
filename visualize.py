@@ -209,7 +209,7 @@ def visualize_tree(
     plt.tight_layout()
     fig.savefig(out_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
-    print(f"Decision tree saved → {out_path}")
+    print(f"Decision tree saved -> {out_path}")
 
 
 # ---------------------------------------------------------------------------

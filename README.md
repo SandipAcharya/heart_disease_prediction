@@ -76,6 +76,18 @@ heart-disease-prediction/
 
 ---
 
+## Decision Tree Visualization
+
+The diagram below shows the trained Decision Tree (depth=4) on the Heart Disease dataset.
+Each internal node shows the **split feature**, **threshold**, **sample count**, and **entropy**.
+Leaf nodes are colour-coded: 🔵 **No Disease** / 🔴 **Heart Disease**.
+
+![Decision Tree Visualization](assets/decision_tree.png)
+
+> Generated with: `python visualize.py --depth 4 --out assets/decision_tree.png`
+
+---
+
 ## Dataset
 
 **UCI Heart Disease Dataset** (`data/heart.csv`)
