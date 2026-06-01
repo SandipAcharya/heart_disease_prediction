@@ -243,25 +243,23 @@ The interactive dashboard (powered by Flask + vanilla JS) allows you to:
 
 | Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC | Train Time |
 |---|---|---|---|---|---|---|
-| Decision Tree *(scratch)* | 0.672 | 0.684 | 0.672 | 0.672 | N/A | 0.29s |
-| Random Forest *(scratch)* | 0.803 | 0.822 | 0.803 | 0.798 | N/A | 9.5s |
-| **Gradient Boosting *(scratch)*** | **0.803** | **0.822** | **0.803** | **0.798** | **0.906** | 9.1s |
-| XGBoost *(library)* | **0.836** | **0.847** | **0.836** | **0.833** | 0.871 | 1.6s |
-| LightGBM *(library)* | 0.803 | 0.813 | 0.803 | 0.800 | 0.859 | **0.34s** |
+| Decision Tree *(scratch)* | 0.672 | 0.684 | 0.672 | 0.672 | 0.678 | 0.32s |
+| Random Forest *(scratch)* | 0.803 | 0.822 | 0.803 | 0.798 | 0.882 | 8.8s |
+| **Gradient Boosting *(scratch)*** | **0.803** | **0.822** | **0.803** | **0.798** | **0.906** | 8.9s |
+| XGBoost *(library)* | **0.836** | **0.847** | **0.836** | **0.833** | 0.871 | 1.5s |
+| LightGBM *(library)* | 0.803 | 0.813 | 0.803 | 0.800 | 0.859 | **0.25s** |
 
 ### Why each model performs as it does
 
 | Model | Strength | Limitation on this dataset |
 |---|---|---|
 | **Decision Tree** | Interpretable, fast | High variance — single tree overfits |
-| **Random Forest** | Variance reduction via bagging | Slower; 50 trees × recursive splits |
-| **Gradient Boosting** (scratch) | Bias reduction via sequential correction; highest ROC-AUC (0.906) | First-order gradients only; slower than XGBoost |
-| **XGBoost** | Best accuracy (83.6%); 2nd-order gradients + regularisation | Library overhead; slight edge from hessian weighting |
-| **LightGBM** | Fastest training (0.34s); excels on large datasets | GOSS/EFB sampling hurts on 303-row datasets |
+| **Random Forest** | Variance reduction via bagging; strong ROC-AUC (0.882) | Slower; 50 trees × recursive splits |
+| **Gradient Boosting** (scratch) | Highest ROC-AUC (0.906) — bias reduction via sequential correction | First-order gradients only; slower than XGBoost |
+| **XGBoost** | Best accuracy (83.6%); 2nd-order gradients + regularisation | Slight accuracy edge from hessian weighting |
+| **LightGBM** | Fastest training (0.25s); excels on large datasets | GOSS/EFB sampling hurts on 303-row datasets |
 
-> **Key insight**: Our from-scratch Gradient Boosting matches Random Forest accuracy
-> and achieves the highest ROC-AUC (0.906), proving the algorithm is correctly implemented.
-> XGBoost's edge comes entirely from its engineering optimisations, not a different algorithm.
+> **Key insight**: Our from-scratch Gradient Boosting achieves the **highest ROC-AUC of all 5 models (0.906)**, proving the algorithm is correctly implemented. XGBoost's accuracy edge comes from engineering optimisations (hessians + regularisation), not a different algorithm.
 
 ---
 

@@ -124,6 +124,26 @@ class RandomForest:
             [self._most_common_label(row) for row in predictions.T]
         )
 
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Return class probability estimates by averaging tree votes.
+
+        Each tree casts a hard vote (0 or 1).  The fraction of trees
+        voting for class 1 forms a smooth probability estimate, which
+        produces much better ROC-AUC scores than a single tree.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+
+        Returns
+        -------
+        np.ndarray of shape (n_samples, 2)
+        """
+        # (n_trees, n_samples)
+        all_preds = np.array([tree.predict(X) for tree in self.trees], dtype=float)
+        prob_positive = all_preds.mean(axis=0)          # fraction voting class-1
+        return np.column_stack([1 - prob_positive, prob_positive])
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------

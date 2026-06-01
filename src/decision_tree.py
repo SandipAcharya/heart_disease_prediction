@@ -134,6 +134,24 @@ class DecisionTree:
             return np.zeros(X.shape[0], dtype=int)
         return np.array([self._traverse_tree(x, self.root) for x in X])
 
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Return class probability estimates for samples in X.
+
+        Since a hard decision tree assigns a single class per leaf, we
+        approximate P(y=1|x) using the leaf's majority label (0.0 or 1.0).
+        This is sufficient for ROC-AUC ranking purposes.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+
+        Returns
+        -------
+        np.ndarray of shape (n_samples, 2)
+        """
+        preds = self.predict(X).astype(float)
+        return np.column_stack([1 - preds, preds])
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
